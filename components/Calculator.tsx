@@ -69,7 +69,7 @@ export const Calculator: React.FC = () => {
         <div className="space-y-3 pb-3 border-b border-gray-100">
             {/* Product Cost (Base) */}
             <div className="relative">
-                <label className="block text-xs font-extrabold text-gray-500 uppercase mb-1.5 ml-1 tracking-wider">Product Cost (Excl. Tax) (₹)</label>
+                <label className="block text-xs font-extrabold text-gray-500 uppercase mb-1.5 ml-1 tracking-wider">Product Cost (Excl. GST) (₹)</label>
                 <input
                     type="number"
                     value={inputs.productCost}
