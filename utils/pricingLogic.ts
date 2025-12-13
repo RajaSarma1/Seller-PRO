@@ -1,10 +1,11 @@
 import { CalculationResult, InputState } from '../types';
 
 /**
- * Advanced Reverse Calculation for Meesho & Flipkart
+ * Advanced Reverse Calculation for Meesho, Flipkart & Amazon
  */
 export const calculateSmartPrice = (inputs: InputState): CalculationResult => {
   const isFlipkart = inputs.marketplace === 'FLIPKART';
+  const isAmazon = inputs.marketplace === 'AMAZON';
 
   // Common Inputs
   const pc = Number(inputs.productCost) || 0;
@@ -19,9 +20,12 @@ export const calculateSmartPrice = (inputs: InputState): CalculationResult => {
   const adsPercent = Number(inputs.adsPercent) || 0;
   const returnRate = Number(inputs.returnRatePercent) || 0;
   
-  // Flipkart Specifics
+  // Marketplace Specifics
+  // Collection Fee: Only Flipkart usually
   const collPercent = isFlipkart ? (Number(inputs.collectionPercent) || 0) : 0;
-  const fixedFee = isFlipkart ? (Number(inputs.fixedFee) || 0) : 0;
+  
+  // Fixed/Closing Fee: Flipkart and Amazon both have this
+  const fixedFee = (isFlipkart || isAmazon) ? (Number(inputs.fixedFee) || 0) : 0;
 
   const commDecimal = commPercent / 100;
   const adsDecimal = adsPercent / 100;
@@ -37,82 +41,34 @@ export const calculateSmartPrice = (inputs: InputState): CalculationResult => {
   const sellerDirectCost = pc + pack + other;
 
   // 2. Determine Factor for SP
-  // We solve: SP * Factor = ConstantCosts
-  // Factor accounts for % based fees and taxes derived from SP.
-  
-  // GST on Product acts on Taxable Value (TV).
-  // SP = TV * (1 + gstDecimal)
-  
-  // Platform Fees (Commission, Collection, Ads) are usually on SP (Inclusive of tax) for Flipkart/Meesho standard calculations.
-  // NOTE: Flipkart charges Commission on Order Value (SP). Collection on Order Value (SP).
-  // GST on Services (18%) is charged on (Commission + Collection + Fixed + Shipping + Ads).
-  
-  // TCS (1%) + TDS (1%) is charged on Taxable Value (TV).
-  // TCS_TDS = 0.02 * TV = 0.02 * (SP / (1 + gstDecimal))
-
   // Platform Fee Sum (Percentage based)
   const percentFeeSum = commDecimal + collDecimal + adsDecimal;
-  
-  // Total Deductions Equation:
-  // Deductions = (percentFeeSum * SP) + FixedFee + ShippingFee
-  // GST on Deductions = 0.18 * Deductions
-  // Total Platform Deduction = 1.18 * [(percentFeeSum * SP) + FixedFee + ShippingFee]
-  
-  // Total Taxes = GST_Product (SP - TV) + TCS_TDS
-  // But strictly speaking, "Settlement" usually excludes GST_Product because the marketplace collects it but the seller has to pay it. 
-  // However, for "Net Profit", we treat GST collected as a liability, not income. 
-  // Let's stick to Bank Settlement approach.
-  // Bank Settlement = SP - GST_Product - TCS_TDS - Total_Platform_Deduction
-  
-  // We want: Bank Settlement - SellerDirectCost - ReturnOverhead = Margin
-  
-  // Return Overhead Estimate: 
-  // loss per return approx = ShippingFee (Forward + Reverse usually) + Packaging + percent of marketing spend.
-  // For simplicity in this reverse calc: ReturnOverhead = returnDecimal * (SellerDirectCost + ShippingFee*2 + FixedFee)
-  // (A simplified heuristic to ensure safety buffer).
-  // Let's refine Return Overhead to be proportional to price to be safer:
-  // ReturnOverhead = returnDecimal * (SP * 0.2) -- heavy simplification? 
-  // Let's stick to the previous logic: Return Overhead = returnDecimal * (BaseCosts + PlatformFees)
-  
-  // --- ALGEBRAIC SOLVER ---
-  
-  // Constant Costs needed to be covered:
-  const constantCosts = sellerDirectCost + margin;
   
   // Fixed Platform Costs (Shipping + FixedFee)
   const fixedPlatformBase = shipFee + fixedFee;
   const fixedPlatformTotal = fixedPlatformBase * 1.18; // Including 18% GST on services
 
-  // The equation:
-  // SP - (SP - SP/(1+gstDecimal)) - (0.02 * SP/(1+gstDecimal)) - 1.18*(percentFeeSum * SP) - fixedPlatformTotal - ReturnOverhead = constantCosts
+  // Constant Costs needed to be covered:
+  const constantCosts = sellerDirectCost + margin;
   
-  // Let's treat ReturnOverhead as a % buffer on the whole Cost Structure for safety.
-  // Effective Cost = (ConstantCosts + FixedPlatformTotal) * (1 + returnDecimal)
+  // --- RETURN OVERHEAD LOGIC ---
+  // Loss on a return usually includes:
+  // 1. Forward Shipping (Platform Fee)
+  // 2. Reverse Shipping (Assume approx same as Forward)
+  // 3. Packaging Cost
+  // 4. Marketing/Ads spend wasted
+  // 5. Amazon Specific: Refund Administration Fee (Min of 20% of Referral Fee or ₹50)
   
-  // Simplified Equation:
-  // NetRealizationPerSale = SP - GST_Liability - TCS_TDS - Platform_Fees_With_GST
+  // We need to estimate Return Overhead to factor it into the required price.
+  // Since Refund Admin Fee depends on Price -> Commission, it's circular. 
+  // We will use a safe approximation for the algebraic step (adding a buffer) 
+  // and then calculate exact value in the final breakdown.
   
-  // 1. GST Liability part:
-  // GST_Liability = SP - (SP / (1+gstDecimal)) = SP * (1 - 1/(1+gstDecimal))
+  // Equation:
+  // Numerator = (ConstantCosts + FixedPlatformTotal) * (1 + ReturnMultiplier)
+  // Denominator = (0.98 / (1 + gstDecimal)) - (1.18 * percentFeeSum)
   
-  // 2. TCS/TDS part:
-  // 0.02 * (SP / (1+gstDecimal))
-  
-  // 3. Platform Fees part:
-  // 1.18 * SP * percentFeeSum + 1.18 * fixedPlatformBase
-  
-  // Combine all SP coefficients (The Denominator):
-  // Coeff = 1 - (1 - 1/(1+gstDecimal)) - (0.02/(1+gstDecimal)) - 1.18*percentFeeSum
-  // Coeff = 1 - 1 + 1/(1+gstDecimal) - 0.02/(1+gstDecimal) - 1.18*percentFeeSum
-  // Coeff = (0.98 / (1+gstDecimal)) - 1.18*percentFeeSum
-  
-  // The Numerator:
-  // ConstantCosts + (1.18 * fixedPlatformBase)
-  // Add Return Overhead Logic: We need to inflate the required revenue to cover returns.
-  // Total Revenue Needed = (ConstantCosts + 1.18*fixedPlatformBase) + (ReturnRate * TotalCost)
-  // This gets circular. Let's apply ReturnRate multiplier to the base costs.
-  
-  const numerator = (constantCosts + fixedPlatformTotal) * (1 + returnDecimal * 1.5); // 1.5 multiplier for safety on return logistics
+  const numerator = (constantCosts + fixedPlatformTotal) * (1 + returnDecimal * 1.5); 
   const denominator = (0.98 / (1 + gstDecimal)) - (1.18 * percentFeeSum);
 
   if (denominator <= 0.05) {
@@ -127,7 +83,10 @@ export const calculateSmartPrice = (inputs: InputState): CalculationResult => {
   
   // Taxes
   const gstAmount = finalListingPrice - finalTaxableValue;
-  const tcsTdsBase = finalTaxableValue * 0.02; // 1% TCS + 1% TDS
+  // TCS/TDS: 
+  // Flipkart/Meesho: ~2% (1% TCS GST + 1% TDS IT)
+  // Amazon: ~1% TCS GST. TDS IT applies if turnover > limit. We keep 2% as safe standard buffer for all.
+  const tcsTdsBase = finalTaxableValue * 0.02; 
 
   // Fees
   const commBase = finalListingPrice * commDecimal;
@@ -137,8 +96,6 @@ export const calculateSmartPrice = (inputs: InputState): CalculationResult => {
   const feesBaseTotal = commBase + collBase + adsBase + fixedFee + shipFee;
   const gstOnFees = feesBaseTotal * 0.18;
   
-  const totalDeductions = feesBaseTotal + gstOnFees + tcsTdsBase + gstAmount;
-  
   // Specific Amounts for UI
   const commissionTotal = commBase * 1.18;
   const collectionTotal = collBase * 1.18;
@@ -146,26 +103,20 @@ export const calculateSmartPrice = (inputs: InputState): CalculationResult => {
   const shippingTotal = shipFee * 1.18;
   const adsTotal = adsBase * 1.18;
 
-  // Return Overhead (Calculated backwards)
-  // Loss on a return ~ Forward Ship + Reverse Ship (assumed same) + Packaging + Dead Marketing
-  const estimatedReturnLossPerUnit = (shipFee * 2) + pack + (adsBase * 1.18);
+  // Exact Return Overhead Calculation
+  let refundAdminFee = 0;
+  if (isAmazon) {
+      // Amazon Refund Administration Fee: Lower of (20% of Referral Fee) or (Rs 50)
+      refundAdminFee = Math.min(commBase * 0.20, 50);
+  }
+
+  const estimatedReturnLossPerUnit = (shipFee * 2) + pack + (adsBase * 1.18) + refundAdminFee;
   const returnOverhead = estimatedReturnLossPerUnit * returnDecimal;
 
-  // Settlement
-  // Bank Settlement typically implies: Listing Price - Deductions (Fees + GST on Fees + TCS/TDS + GST Product)
-  // Note: Marketplaces deduct GST on Product from the payout usually (Tax Collection at Source model is different, but they deduct the tax liability to pay gov or you pay. 
-  // To keep "Settlement" meaning "Amount hitting bank":
-  // Settlement = ListingPrice - (Commission+GST) - (Coll+GST) - (Fixed+GST) - (Ship+GST) - (Ads+GST) - TCS/TDS - GST_Liability
-  
-  // WAIT: Sellers usually pay GST Liability separately via GSTR-3B using collected tax. 
-  // Marketplaces deduct Fees and TCS/TDS. They DO NOT deduct the 18% Product GST (unless specific models).
-  // However, for "Net Profit" calculation, the seller MUST treat Product GST as an expense (pass-through).
-  // The UI shows "Settlement" (Bank Payout) and "Net Profit".
-  
-  // Bank Payout (Approx) = SP - (All Platform Fees incl GST) - TCS/TDS
+  // Bank Settlement (Approx) = SP - (All Platform Fees incl GST) - TCS/TDS
   const bankSettlement = finalListingPrice - (feesBaseTotal * 1.18) - tcsTdsBase;
   
-  // Net Profit = BankSettlement - ProductGST - ProductCost - Pack - Other - ReturnOverhead
+  // Net Profit
   const netProfit = bankSettlement - gstAmount - pc - pack - other - returnOverhead;
   
   const roi = (pc + pack + other) > 0 ? (netProfit / (pc + pack + other)) * 100 : 0;

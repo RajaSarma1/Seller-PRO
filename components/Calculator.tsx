@@ -74,6 +74,14 @@ export const Calculator: React.FC = () => {
   const totalPurchaseCost = productCostVal + gstPaidVal;
 
   const isFlipkart = inputs.marketplace === 'FLIPKART';
+  const isAmazon = inputs.marketplace === 'AMAZON';
+
+  // Dynamic Labels
+  const shippingLabel = isAmazon ? 'Amazon Easy Ship Fee (₹)' : isFlipkart ? 'Flipkart Shipping Fee (₹)' : 'Meesho Shipping Fee (₹)';
+  const shippingPlaceholder = isAmazon ? "e.g. 72 (National)" : isFlipkart ? "e.g. 52 (National)" : "Platform delivery charge";
+  
+  const commissionLabel = isAmazon ? 'Referral Fee %' : 'Commission %';
+  const fixedFeeLabel = isAmazon ? 'Closing Fee (₹)' : 'Fixed / Closing Fee (₹)';
 
   return (
     <div className="w-full max-w-md mx-auto pb-24">
@@ -82,7 +90,7 @@ export const Calculator: React.FC = () => {
       <div className="flex p-1 bg-gray-200 rounded-xl mb-6 shadow-inner">
         <button
             onClick={() => handleMarketplaceChange('MEESHO')}
-            className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-lg text-sm font-bold transition-all duration-300 ${
+            className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 ${
                 inputs.marketplace === 'MEESHO' 
                 ? 'bg-meesho-pink text-white shadow-md' 
                 : 'text-gray-500 hover:text-gray-700'
@@ -92,13 +100,23 @@ export const Calculator: React.FC = () => {
         </button>
         <button
             onClick={() => handleMarketplaceChange('FLIPKART')}
-            className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-lg text-sm font-bold transition-all duration-300 ${
+            className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 ${
                 inputs.marketplace === 'FLIPKART' 
                 ? 'bg-blue-600 text-white shadow-md' 
                 : 'text-gray-500 hover:text-gray-700'
             }`}
         >
             <span className="font-display">Flipkart</span>
+        </button>
+        <button
+            onClick={() => handleMarketplaceChange('AMAZON')}
+            className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 ${
+                inputs.marketplace === 'AMAZON' 
+                ? 'bg-gray-800 text-white shadow-md' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+        >
+            <span className="font-display">Amazon</span>
         </button>
       </div>
 
@@ -143,14 +161,14 @@ export const Calculator: React.FC = () => {
         <div className="relative pt-1">
             <label className="block text-xs font-extrabold text-gray-500 uppercase mb-1.5 ml-1 tracking-wider flex items-center gap-1">
                 <Truck size={14} /> 
-                {isFlipkart ? 'Flipkart Shipping Fee (₹)' : 'Meesho Shipping Fee (₹)'}
+                {shippingLabel}
             </label>
             <div className="relative">
                 <input
                     type="number"
                     value={inputs.shippingCost}
                     onChange={(e) => handleChange('shippingCost', e.target.value)}
-                    placeholder={isFlipkart ? "e.g. 52 (National)" : "Platform delivery charge"}
+                    placeholder={shippingPlaceholder}
                     className="w-full p-3 font-semibold bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-meesho-pink focus:bg-white focus:ring-2 focus:ring-pink-50 transition-all outline-none text-gray-800"
                 />
             </div>
@@ -176,45 +194,45 @@ export const Calculator: React.FC = () => {
 
         {/* 4. Platform Fees */}
         <div className="grid grid-cols-2 gap-3">
-             {/* Commission */}
+             {/* Commission / Referral Fee */}
              <div>
-                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 tracking-tight">Commission %</label>
+                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 tracking-tight">{commissionLabel}</label>
                  <input
                     type="number"
                     value={inputs.commissionPercent}
                     onChange={(e) => handleChange('commissionPercent', e.target.value)}
                     placeholder="0"
-                    disabled={!isFlipkart} // Meesho is usually 0 commission
-                    className={`w-full p-2 text-center font-semibold border rounded-lg outline-none ${!isFlipkart ? 'bg-gray-100 text-gray-400' : 'bg-gray-50 border-gray-200 focus:border-blue-400'}`}
+                    disabled={!isFlipkart && !isAmazon}
+                    className={`w-full p-2 text-center font-semibold border rounded-lg outline-none ${(!isFlipkart && !isAmazon) ? 'bg-gray-100 text-gray-400' : 'bg-gray-50 border-gray-200 focus:border-blue-400'}`}
                  />
              </div>
              
              {/* Collection Fee (Flipkart Only) */}
-             <div>
+             <div className={`${isAmazon ? 'opacity-30' : ''}`}>
                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 tracking-tight">Collection Fee %</label>
                  <input
                     type="number"
                     value={inputs.collectionPercent}
                     onChange={(e) => handleChange('collectionPercent', e.target.value)}
-                    placeholder="2.0"
+                    placeholder={isAmazon ? "N/A" : "2.0"}
                     disabled={!isFlipkart}
                     className={`w-full p-2 text-center font-semibold border rounded-lg outline-none ${!isFlipkart ? 'bg-gray-100 text-gray-400' : 'bg-gray-50 border-gray-200 focus:border-blue-400'}`}
                  />
              </div>
         </div>
 
-        {/* Fixed Fee (Flipkart Only) */}
-        {isFlipkart && (
+        {/* Fixed Fee / Closing Fee (Flipkart & Amazon) */}
+        {(isFlipkart || isAmazon) && (
             <div className="relative animate-slide-up">
-                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 tracking-tight">Fixed / Closing Fee (₹)</label>
+                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 tracking-tight">{fixedFeeLabel}</label>
                  <input
                     type="number"
                     value={inputs.fixedFee}
                     onChange={(e) => handleChange('fixedFee', e.target.value)}
-                    placeholder="e.g. 15 (<500), 35 (>500)"
+                    placeholder={isAmazon ? "e.g. 25, 20, 12 (See Rate Card)" : "e.g. 15 (<500), 35 (>500)"}
                     className="w-full p-2.5 font-semibold bg-blue-50 border border-blue-200 rounded-lg focus:border-blue-400 outline-none text-blue-800"
                  />
-                 <p className="text-[9px] text-gray-400 mt-1">Check Flipkart rate card based on your selling price tier.</p>
+                 <p className="text-[9px] text-gray-400 mt-1">Check platform rate card based on your selling price tier.</p>
             </div>
         )}
 

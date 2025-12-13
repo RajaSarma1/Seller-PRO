@@ -7,7 +7,7 @@ export enum GST_RATE {
   TWENTYEIGHT = 28
 }
 
-export type Marketplace = 'MEESHO' | 'FLIPKART';
+export type Marketplace = 'MEESHO' | 'FLIPKART' | 'AMAZON';
 
 export interface CalculationResult {
   listingPrice: number;
@@ -17,7 +17,7 @@ export interface CalculationResult {
   tdsAmount: number;
   commissionAmount: number;
   collectionAmount: number; // New for Flipkart
-  fixedFeeAmount: number;   // New for Flipkart
+  fixedFeeAmount: number;   // New for Flipkart/Amazon
   adsAmount: number;
   shippingAmount: number;   // Explicitly track platform shipping deduction
   returnOverhead: number;

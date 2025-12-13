@@ -93,7 +93,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ results }) => {
                 
                 {results.commissionAmount > 0 && (
                     <div className="flex justify-between py-1 text-purple-600/80">
-                        <span>Commission Fee</span>
+                        <span>Commission / Referral Fee</span>
                         <span>-{formatCurrency(results.commissionAmount)}</span>
                     </div>
                 )}
