@@ -7,6 +7,8 @@ export enum GST_RATE {
   TWENTYEIGHT = 28
 }
 
+export type Marketplace = 'MEESHO' | 'FLIPKART';
+
 export interface CalculationResult {
   listingPrice: number;
   taxableValue: number;
@@ -14,7 +16,10 @@ export interface CalculationResult {
   tcsAmount: number;
   tdsAmount: number;
   commissionAmount: number;
+  collectionAmount: number; // New for Flipkart
+  fixedFeeAmount: number;   // New for Flipkart
   adsAmount: number;
+  shippingAmount: number;   // Explicitly track platform shipping deduction
   returnOverhead: number;
   totalSettlement: number;
   netProfit: number;
@@ -22,14 +27,17 @@ export interface CalculationResult {
 }
 
 export interface InputState {
+  marketplace: Marketplace;
   productCost: number | '';
   gstPaidOnProduct: number | ''; // GST Amount paid to supplier
-  shippingCost: number | ''; // Seller shipping cost
+  shippingCost: number | ''; // Platform Shipping Fee (e.g., National Shipping charge)
   packagingCost: number | '';
   otherExpenses: number | '';
   desiredMargin: number | '';
   gstRate: GST_RATE;
   commissionPercent: number | '';
+  collectionPercent: number | ''; // New for Flipkart
+  fixedFee: number | '';          // New for Flipkart (Closing Fee)
   returnRatePercent: number | '';
   adsPercent: number | '';
 }

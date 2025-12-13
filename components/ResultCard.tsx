@@ -27,7 +27,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ results }) => {
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-white opacity-5 rounded-full blur-2xl"></div>
         <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/20 to-transparent"></div>
 
-        <p className="text-gray-300 text-xs font-bold uppercase tracking-widest mb-2">Listing Price</p>
+        <p className="text-gray-300 text-xs font-bold uppercase tracking-widest mb-2">Recommended Listing Price</p>
         
         <div className="flex items-end justify-between mb-4">
           <h2 className="text-5xl font-black font-display tracking-tight text-white drop-shadow-sm">
@@ -44,7 +44,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ results }) => {
         {/* Key Stats Row */}
         <div className="grid grid-cols-3 gap-2 py-3 border-t border-white/10">
             <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400 uppercase">Settlement</span>
+                <span className="text-[10px] text-gray-400 uppercase">Bank Payout</span>
                 <span className="font-bold text-lg text-white">{formatCurrency(results.totalSettlement)}</span>
             </div>
             <div className="flex flex-col text-center border-l border-r border-white/10">
@@ -79,7 +79,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ results }) => {
             
             {/* Government Taxes */}
             <div className="flex justify-between py-1 text-red-600/80">
-                <span className="">GST Amount</span>
+                <span className="">Product GST Liability</span>
                 <span className="font-medium">-{formatCurrency(results.gstAmount)}</span>
             </div>
             <div className="flex justify-between py-1 text-orange-600/80">
@@ -87,36 +87,61 @@ export const ResultCard: React.FC<ResultCardProps> = ({ results }) => {
                 <span className="font-medium">-{formatCurrency(results.tcsAmount + results.tdsAmount)}</span>
             </div>
 
-            {/* Platform & Marketing */}
-            {(results.commissionAmount > 0 || results.adsAmount > 0) && (
-                <div className="my-2 pt-2 border-t border-dashed border-gray-200">
-                    {results.commissionAmount > 0 && (
-                        <div className="flex justify-between py-1 text-purple-600/80">
-                            <span>Commission + GST</span>
-                            <span>-{formatCurrency(results.commissionAmount)}</span>
-                        </div>
-                    )}
-                    {results.adsAmount > 0 && (
-                         <div className="flex justify-between py-1 text-purple-600/80">
-                            <span>Ads Cost + GST</span>
-                            <span>-{formatCurrency(results.adsAmount)}</span>
-                        </div>
-                    )}
-                </div>
-            )}
+            {/* Platform Fees */}
+            <div className="my-2 pt-2 border-t border-dashed border-gray-200">
+                <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Platform Deductions (Inc. 18% GST)</p>
+                
+                {results.commissionAmount > 0 && (
+                    <div className="flex justify-between py-1 text-purple-600/80">
+                        <span>Commission Fee</span>
+                        <span>-{formatCurrency(results.commissionAmount)}</span>
+                    </div>
+                )}
+                
+                {results.collectionAmount > 0 && (
+                    <div className="flex justify-between py-1 text-purple-600/80">
+                        <span>Collection Fee</span>
+                        <span>-{formatCurrency(results.collectionAmount)}</span>
+                    </div>
+                )}
+                
+                {results.fixedFeeAmount > 0 && (
+                    <div className="flex justify-between py-1 text-purple-600/80">
+                        <span>Fixed / Closing Fee</span>
+                        <span>-{formatCurrency(results.fixedFeeAmount)}</span>
+                    </div>
+                )}
+
+                 {results.shippingAmount > 0 && (
+                    <div className="flex justify-between py-1 text-blue-600/80">
+                        <span>Shipping Fee</span>
+                        <span>-{formatCurrency(results.shippingAmount)}</span>
+                    </div>
+                )}
+
+                {results.adsAmount > 0 && (
+                     <div className="flex justify-between py-1 text-purple-600/80">
+                        <span>Ads Cost</span>
+                        <span>-{formatCurrency(results.adsAmount)}</span>
+                    </div>
+                )}
+            </div>
 
             {/* Hidden Costs */}
             {results.returnOverhead > 0 && (
                 <div className="flex justify-between py-2 bg-orange-50 px-2 rounded-lg my-1">
                      <span className="text-orange-800 flex items-center gap-1 text-xs">
-                        <AlertCircle size={12}/> Est. Return Loss
+                        <AlertCircle size={12}/> Est. Return Loss Buffer
                      </span>
                      <span className="font-bold text-orange-800">-{formatCurrency(results.returnOverhead)}</span>
                 </div>
             )}
 
              <div className="flex justify-between py-3 mt-2 border-t border-gray-200">
-                <span className="font-bold text-gray-800">Bank Settlement</span>
+                <div className="flex flex-col">
+                    <span className="font-bold text-gray-800">Bank Payout</span>
+                    <span className="text-[10px] text-gray-400">Settlement after fees & taxes</span>
+                </div>
                 <span className="font-bold text-meesho-pink">{formatCurrency(results.totalSettlement)}</span>
             </div>
         </div>

@@ -1,26 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { GST_RATE, InputState, CalculationResult } from '../types';
+import { GST_RATE, InputState, CalculationResult, Marketplace } from '../types';
 import { calculateSmartPrice } from '../utils/pricingLogic';
 import { ResultCard } from './ResultCard';
-import { RefreshCcw, Info } from 'lucide-react';
+import { RefreshCcw, ShoppingBag, Truck } from 'lucide-react';
 
 export const Calculator: React.FC = () => {
   const [inputs, setInputs] = useState<InputState>({
+    marketplace: 'MEESHO',
     productCost: '',
     gstPaidOnProduct: '',
     shippingCost: '',
     packagingCost: '',
     otherExpenses: '',
     commissionPercent: 0,
+    collectionPercent: 0,
+    fixedFee: '',
     returnRatePercent: 0,
     adsPercent: 0,
     desiredMargin: '',
-    gstRate: GST_RATE.THREE, // 3% is common for apparel
+    gstRate: GST_RATE.THREE, 
   });
 
   const [results, setResults] = useState<CalculationResult | null>(null);
 
-  // Auto-calculate when critical inputs change
+  // Auto-calculate
   useEffect(() => {
     const isComplete = inputs.productCost !== '' && inputs.desiredMargin !== '';
     if (isComplete) {
@@ -32,19 +35,32 @@ export const Calculator: React.FC = () => {
   }, [inputs]);
 
   const handleChange = (field: keyof InputState, value: string) => {
-    // Allow empty string for backspacing, otherwise parse number
     const numVal = value === '' ? '' : parseFloat(value);
     setInputs(prev => ({ ...prev, [field]: numVal }));
   };
 
+  const handleMarketplaceChange = (mp: Marketplace) => {
+    setInputs(prev => ({ 
+        ...prev, 
+        marketplace: mp,
+        // Reset mp specific fields to avoid confusion
+        commissionPercent: mp === 'MEESHO' ? 0 : prev.commissionPercent,
+        fixedFee: mp === 'MEESHO' ? '' : prev.fixedFee,
+        collectionPercent: mp === 'MEESHO' ? 0 : prev.collectionPercent
+    }));
+  };
+
   const handleReset = () => {
     setInputs({
+        marketplace: inputs.marketplace,
         productCost: '',
         gstPaidOnProduct: '',
         shippingCost: '',
         packagingCost: '',
         otherExpenses: '',
         commissionPercent: 0,
+        collectionPercent: 0,
+        fixedFee: '',
         returnRatePercent: 0,
         adsPercent: 0,
         desiredMargin: '',
@@ -53,21 +69,44 @@ export const Calculator: React.FC = () => {
     setResults(null);
   };
 
-  // Derived Values for Display
   const productCostVal = Number(inputs.productCost) || 0;
   const gstPaidVal = Number(inputs.gstPaidOnProduct) || 0;
-  const itcValue = gstPaidVal; // Input Tax Credit is equal to GST Paid
   const totalPurchaseCost = productCostVal + gstPaidVal;
+
+  const isFlipkart = inputs.marketplace === 'FLIPKART';
 
   return (
     <div className="w-full max-w-md mx-auto pb-24">
       
+      {/* Marketplace Switcher */}
+      <div className="flex p-1 bg-gray-200 rounded-xl mb-6 shadow-inner">
+        <button
+            onClick={() => handleMarketplaceChange('MEESHO')}
+            className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-lg text-sm font-bold transition-all duration-300 ${
+                inputs.marketplace === 'MEESHO' 
+                ? 'bg-meesho-pink text-white shadow-md' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+        >
+            <span className="font-display">Meesho</span>
+        </button>
+        <button
+            onClick={() => handleMarketplaceChange('FLIPKART')}
+            className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-lg text-sm font-bold transition-all duration-300 ${
+                inputs.marketplace === 'FLIPKART' 
+                ? 'bg-blue-600 text-white shadow-md' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+        >
+            <span className="font-display">Flipkart</span>
+        </button>
+      </div>
+
       {/* Inputs Section */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4 mb-6">
         
         {/* 1. Product Cost Block */}
         <div className="space-y-3 pb-3 border-b border-gray-100">
-            {/* Product Cost (Base) */}
             <div className="relative">
                 <label className="block text-xs font-extrabold text-gray-500 uppercase mb-1.5 ml-1 tracking-wider">Product Cost (Excl. GST) (₹)</label>
                 <input
@@ -79,29 +118,18 @@ export const Calculator: React.FC = () => {
                 />
             </div>
 
-            {/* GST Paid on Product */}
             <div className="relative">
-                 <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1 tracking-wider">GST Paid on Product Cost (₹)</label>
+                 <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1 tracking-wider">GST Paid on Product (₹)</label>
                  <input
                     type="number"
                     value={inputs.gstPaidOnProduct}
                     onChange={(e) => handleChange('gstPaidOnProduct', e.target.value)}
-                    placeholder="GST amount paid to supplier"
+                    placeholder="Input Tax Credit Amount"
                     className="w-full p-2.5 text-base font-semibold bg-white border border-gray-300 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none text-gray-700"
                  />
             </div>
 
-            {/* Auto-Calculated Fields Grid */}
             <div className="grid grid-cols-2 gap-3">
-                {/* ITC Read-only */}
-                <div className="p-2 bg-blue-50/50 rounded-lg border border-blue-100">
-                    <label className="block text-[9px] font-bold text-blue-800/60 uppercase mb-1 truncate">GST Input Credit (ITC)</label>
-                    <div className="font-mono font-bold text-blue-700">
-                        {itcValue > 0 ? `₹${itcValue.toFixed(2)}` : '₹0.00'}
-                    </div>
-                </div>
-
-                 {/* Total Purchase Cost Read-only */}
                  <div className="p-2 bg-gray-100 rounded-lg border border-gray-200">
                     <label className="block text-[9px] font-bold text-gray-500 uppercase mb-1 truncate">Total Purchase Cost</label>
                     <div className="font-mono font-bold text-gray-700">
@@ -111,19 +139,24 @@ export const Calculator: React.FC = () => {
             </div>
         </div>
 
-        {/* 2. Shipping Cost */}
+        {/* 2. Platform Shipping Fee */}
         <div className="relative pt-1">
-            <label className="block text-xs font-extrabold text-gray-500 uppercase mb-1.5 ml-1 tracking-wider">Shipping Cost (₹)</label>
+            <label className="block text-xs font-extrabold text-gray-500 uppercase mb-1.5 ml-1 tracking-wider flex items-center gap-1">
+                <Truck size={14} /> 
+                {isFlipkart ? 'Flipkart Shipping Fee (₹)' : 'Meesho Shipping Fee (₹)'}
+            </label>
             <div className="relative">
                 <input
                     type="number"
                     value={inputs.shippingCost}
                     onChange={(e) => handleChange('shippingCost', e.target.value)}
-                    placeholder="Seller shipping share"
+                    placeholder={isFlipkart ? "e.g. 52 (National)" : "Platform delivery charge"}
                     className="w-full p-3 font-semibold bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-meesho-pink focus:bg-white focus:ring-2 focus:ring-pink-50 transition-all outline-none text-gray-800"
                 />
             </div>
-             <p className="text-[10px] text-gray-400 mt-1 ml-1">If Free Delivery, enter courier charge here.</p>
+             <p className="text-[10px] text-gray-400 mt-1 ml-1">
+                Enter the shipping amount charged by platform.
+             </p>
         </div>
 
         {/* 3. Packaging Cost */}
@@ -141,8 +174,8 @@ export const Calculator: React.FC = () => {
         {/* SECTION SPLITTER */}
         <div className="h-px bg-gray-100 my-2"></div>
 
-        {/* 4. Platform Fees (Commission, Returns, Ads) */}
-        <div className="grid grid-cols-3 gap-3">
+        {/* 4. Platform Fees */}
+        <div className="grid grid-cols-2 gap-3">
              {/* Commission */}
              <div>
                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 tracking-tight">Commission %</label>
@@ -151,25 +184,42 @@ export const Calculator: React.FC = () => {
                     value={inputs.commissionPercent}
                     onChange={(e) => handleChange('commissionPercent', e.target.value)}
                     placeholder="0"
-                    className="w-full p-2 text-center font-semibold bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-400 outline-none"
+                    disabled={!isFlipkart} // Meesho is usually 0 commission
+                    className={`w-full p-2 text-center font-semibold border rounded-lg outline-none ${!isFlipkart ? 'bg-gray-100 text-gray-400' : 'bg-gray-50 border-gray-200 focus:border-blue-400'}`}
                  />
              </div>
              
-             {/* Return Rate */}
+             {/* Collection Fee (Flipkart Only) */}
              <div>
-                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 tracking-tight flex items-center gap-1">
-                    Return Rate % 
-                 </label>
+                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 tracking-tight">Collection Fee %</label>
                  <input
                     type="number"
-                    value={inputs.returnRatePercent}
-                    onChange={(e) => handleChange('returnRatePercent', e.target.value)}
-                    placeholder="10-15"
-                    className="w-full p-2 text-center font-semibold bg-gray-50 border border-gray-200 rounded-lg focus:border-orange-400 outline-none"
+                    value={inputs.collectionPercent}
+                    onChange={(e) => handleChange('collectionPercent', e.target.value)}
+                    placeholder="2.0"
+                    disabled={!isFlipkart}
+                    className={`w-full p-2 text-center font-semibold border rounded-lg outline-none ${!isFlipkart ? 'bg-gray-100 text-gray-400' : 'bg-gray-50 border-gray-200 focus:border-blue-400'}`}
                  />
              </div>
+        </div>
 
-             {/* Ads Cost */}
+        {/* Fixed Fee (Flipkart Only) */}
+        {isFlipkart && (
+            <div className="relative animate-slide-up">
+                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 tracking-tight">Fixed / Closing Fee (₹)</label>
+                 <input
+                    type="number"
+                    value={inputs.fixedFee}
+                    onChange={(e) => handleChange('fixedFee', e.target.value)}
+                    placeholder="e.g. 15 (<500), 35 (>500)"
+                    className="w-full p-2.5 font-semibold bg-blue-50 border border-blue-200 rounded-lg focus:border-blue-400 outline-none text-blue-800"
+                 />
+                 <p className="text-[9px] text-gray-400 mt-1">Check Flipkart rate card based on your selling price tier.</p>
+            </div>
+        )}
+
+        {/* Ads & Returns */}
+        <div className="grid grid-cols-2 gap-3 mt-2">
              <div>
                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 tracking-tight">Ads Cost %</label>
                  <input
@@ -180,9 +230,18 @@ export const Calculator: React.FC = () => {
                     className="w-full p-2 text-center font-semibold bg-gray-50 border border-gray-200 rounded-lg focus:border-purple-400 outline-none"
                  />
              </div>
+             <div>
+                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 tracking-tight">Return Rate %</label>
+                 <input
+                    type="number"
+                    value={inputs.returnRatePercent}
+                    onChange={(e) => handleChange('returnRatePercent', e.target.value)}
+                    placeholder="10-15"
+                    className="w-full p-2 text-center font-semibold bg-gray-50 border border-gray-200 rounded-lg focus:border-orange-400 outline-none"
+                 />
+             </div>
         </div>
-        <p className="text-[10px] text-gray-400 text-center italic">Platform overheads & marketing</p>
-        
+
         {/* Other Expenses */}
         <div className="relative mt-3">
             <label className="block text-xs font-extrabold text-gray-500 uppercase mb-1.5 ml-1 tracking-wider">Other Expenses (₹)</label>
@@ -190,17 +249,16 @@ export const Calculator: React.FC = () => {
                 type="number"
                 value={inputs.otherExpenses}
                 onChange={(e) => handleChange('otherExpenses', e.target.value)}
-                placeholder="It can be anything..."
+                placeholder="Overheads..."
                 className="w-full p-3 font-semibold bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-meesho-pink focus:bg-white focus:ring-2 focus:ring-pink-50 transition-all outline-none text-gray-800"
             />
         </div>
 
-        {/* SECTION SPLITTER */}
         <div className="h-px bg-gray-100 my-2"></div>
 
         {/* GST Selector */}
         <div>
-             <label className="block text-xs font-extrabold text-gray-500 uppercase mb-2 ml-1 tracking-wider">GST Rate</label>
+             <label className="block text-xs font-extrabold text-gray-500 uppercase mb-2 ml-1 tracking-wider">Product GST Rate</label>
              <div className="grid grid-cols-4 gap-2">
                 {[3, 5, 12, 18].map((rate) => (
                     <button
@@ -233,18 +291,16 @@ export const Calculator: React.FC = () => {
         </div>
       </div>
 
-      {/* Results or Call to Action */}
       <div className="min-h-[100px] transition-all">
         {results ? (
             <ResultCard results={results} />
         ) : (
             <div className="flex flex-col items-center justify-center p-6 text-center opacity-60">
-                <div className="text-sm text-gray-400">Fill details to see the magic price</div>
+                <div className="text-sm text-gray-400">Enter details to calculate pricing</div>
             </div>
         )}
       </div>
 
-       {/* Reset Button */}
        {results && (
          <div className="flex justify-center mt-8 pb-10">
             <button 
