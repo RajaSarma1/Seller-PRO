@@ -28,12 +28,64 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 px-4 py-6">
-        <div className="max-w-md mx-auto mb-6">
+        <div className="max-w-md mx-auto mb-6 text-center">
             <h1 className="text-2xl font-display font-bold text-brand-dark">Price Calculator</h1>
-            <p className="text-gray-500 text-sm">Accurate settlement estimation for Meesho/Flipkart/Amazon</p>
+            <p className="text-gray-500 text-sm mb-6">Accurate settlement estimation for Meesho/Flipkart/Amazon</p>
+
+            {/* One line value statement */}
+            <p className="text-lg font-bold text-brand-dark mb-5 leading-tight px-2">
+              Calculate your exact selling price, profit, and ROI by including all platform charges, GST, and real business costs.
+            </p>
+
+            {/* Explanation block styled like calculator card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-2 text-center">
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Our Pricing Calculator helps online sellers accurately calculate selling prices for Meesho, Flipkart, and Amazon. It factors in product cost, GST paid, platform charges, logistics, returns, and profit margins so you always know your real earnings.
+              </p>
+            </div>
         </div>
         
         <Calculator />
+
+        {/* Detailed SEO/Explanation Content Block */}
+        <div className="max-w-md mx-auto -mt-12 mb-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-left relative z-0">
+            <h2 className="text-lg font-display font-bold text-brand-dark mb-4 leading-tight">
+              Smart Pricing Calculator for Online Sellers (Meesho, Flipkart & Amazon)
+            </h2>
+            
+            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              Selling online is not just about listing a product, correct pricing is what actually decides your profit. Platforms like Meesho, Flipkart, and Amazon include multiple charges such as commissions, shipping fees, GST, payment deductions, and returns, which often confuse sellers and reduce margins unexpectedly.
+            </p>
+            
+            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              Our Pricing Calculator is designed to simplify this entire process. This calculator helps sellers accurately calculate the final selling price, net profit, and ROI by considering all important cost components such as product cost, GST paid, platform charges, logistics fees, payment deductions, and other applicable costs. It also supports GST Input Credit (ITC) calculations, making it easier for GST-registered sellers to understand their real cost and profit.
+            </p>
+
+            <p className="text-sm font-semibold text-gray-800 mb-2">Whether you are selling on Meesho, Flipkart, or Amazon, this tool allows you to:</p>
+            <ul className="list-disc pl-5 text-sm text-gray-600 mb-4 space-y-1 marker:text-meesho-pink">
+              <li>Set the right selling price</li>
+              <li>Avoid underpricing or loss</li>
+              <li>Understand real profit after all deductions</li>
+              <li>Plan margins confidently</li>
+            </ul>
+
+            <p className="text-sm font-semibold text-gray-800 mb-2">This calculator is especially useful for:</p>
+            <ul className="list-disc pl-5 text-sm text-gray-600 mb-4 space-y-1 marker:text-meesho-pink">
+              <li>Online sellers</li>
+              <li>Wholesale sellers</li>
+              <li>Resellers</li>
+              <li>D2C brands</li>
+              <li>New online sellers</li>
+            </ul>
+
+            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              We originally built this tool for our own internal pricing calculations. Later, we realized many sellers face the same confusion, so we made it available for everyone to use.
+            </p>
+
+            <p className="text-sm font-bold text-brand-dark italic border-l-4 border-meesho-pink pl-3 py-2 bg-gray-50 rounded-r">
+              Our goal is simple: transparent pricing, better decisions, and healthier profits.
+            </p>
+        </div>
       </main>
 
       {/* Social Follow Section */}
